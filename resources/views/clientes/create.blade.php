@@ -18,7 +18,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('clientes.store') }}" method="POST">
+                    <form action="{{ route('clientes.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
 
                         <div class="mb-3">
@@ -40,6 +40,12 @@
                         <div class="mb-3">
                             <label class="form-label">Dirección</label>
                             <textarea name="direccion" class="form-control" rows="3" placeholder="Dirección completa">{{ old('direccion') }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Foto del Cliente</label>
+                            <input type="file" name="imagen" class="form-control" accept="image/*">
+                            <small class="form-text text-muted">Formatos permitidos: JPG, PNG, GIF (Máx. 2MB)</small>
                         </div>
 
                         <div class="d-flex justify-content-between">

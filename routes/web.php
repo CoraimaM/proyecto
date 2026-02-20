@@ -7,6 +7,7 @@ use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\IncidenciaController;
+use App\Http\Controllers\RoleController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -48,5 +49,18 @@ Route::middleware('auth')->group(function () {
     Route::resource('incidencias', IncidenciaController::class);
     Route::post('incidencias/{id}/restore', [IncidenciaController::class, 'restore'])->name('incidencias.restore');
     Route::delete('incidencias/{id}/force', [IncidenciaController::class, 'forceDelete'])->name('incidencias.forceDelete');
+    
+    // Administración de Roles y Permisos (solo para Admin)
+    Route::middleware(['role:Admin'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+        Route::get('/roles/users', [RoleController::class, 'users'])->name('roles.users');
+        Route::get('/roles/roles', [RoleController::class, 'roles'])->name('roles.roles');
+        Route::post('/roles/users/{user}/assign', [RoleController::class, 'assignRole'])->name('roles.assignRole');
+        Route::post('/roles/users', [RoleController::class, 'storeUser'])->name('roles.storeUser');
+        Route::delete('/roles/users/{user}', [RoleController::class, 'destroyUser'])->name('roles.destroyUser');
+        Route::post('/roles/roles', [RoleController::class, 'storeRole'])->name('roles.storeRole');
+        Route::put('/roles/roles/{role}/permissions', [RoleController::class, 'updateRolePermissions'])->name('roles.updatePermissions');
+        Route::delete('/roles/roles/{role}', [RoleController::class, 'destroyRole'])->name('roles.destroyRole');
+    });
 });
 

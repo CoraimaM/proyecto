@@ -20,6 +20,7 @@ class UpdateClienteRequest extends FormRequest
             'email' => "nullable|email|max:255|unique:clientes,email,{$id}",
             'telefono' => 'nullable|string|max:50',
             'direccion' => 'nullable|string|max:1000',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
     }
 }

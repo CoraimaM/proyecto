@@ -18,7 +18,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('productos.update', $producto->id) }}" method="POST">
+                    <form action="{{ route('productos.update', $producto->id) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
@@ -46,6 +46,31 @@
                         <div class="mb-3">
                             <label class="form-label">Descripción</label>
                             <textarea name="descripcion" class="form-control" rows="3" placeholder="Descripción del producto">{{ old('descripcion', $producto->descripcion) }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Imagen del Producto</label>
+                            @if($producto->imagen)
+                                <div class="mb-2">
+                                    <img src="{{ asset($producto->imagen) }}" alt="Imagen actual" style="max-width: 150px; height: auto;" class="img-thumbnail">
+                                    <p class="text-muted small">Imagen actual</p>
+                                </div>
+                            @endif
+                            <input type="file" name="imagen" class="form-control" accept="image/*">
+                            <small class="form-text text-muted">Seleccionar nueva imagen para reemplazar (JPG, PNG, GIF - Máx. 2MB)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Archivo PDF (Ficha Técnica, Manual, etc.)</label>
+                            @if($producto->archivo_pdf)
+                                <div class="mb-2">
+                                    <a href="{{ asset($producto->archivo_pdf) }}" target="_blank" class="btn btn-sm btn-outline-danger">
+                                        <i class="fa fa-file-pdf"></i> Ver PDF actual
+                                    </a>
+                                </div>
+                            @endif
+                            <input type="file" name="archivo_pdf" class="form-control" accept=".pdf">
+                            <small class="form-text text-muted">Seleccionar nuevo PDF para reemplazar (Máx. 5MB)</small>
                         </div>
 
                         <div class="d-flex justify-content-between">

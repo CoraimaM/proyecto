@@ -14,6 +14,11 @@
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-papK4X0n6VQmKqXr4s+e8Z0P4Yv3G3Wc1Kq9x6Y5r9j6Zp9T1k3K6Hq9x1Zq6nQe1Kq3Z5p9V0Y3q6Kq9Z1LQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    
     <style>
         :root{ --pink:#ff6fa6; --pink-dark:#e85692; --pink-light:#ffe6f2; --pink-gradient: linear-gradient(90deg,#ff86b1 0%,#ff6fa6 100%); }
 
@@ -102,6 +107,13 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('incidencias.index') }}">Incidencias</a>
                             </li>
+                            @role('Admin')
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('admin.roles.index') }}" style="color: var(--pink-dark); font-weight: 600;">
+                                    <i class="fa fa-user-shield me-1"></i>Administración
+                                </a>
+                            </li>
+                            @endrole
                         @endauth
                     </ul>
 
@@ -148,5 +160,16 @@
             @yield('content')
         </main>
     </div>
+    
+    <!-- jQuery (necesario para DataTables) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+    
+    @stack('scripts')
 </body>
 </html>

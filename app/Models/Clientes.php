@@ -17,6 +17,7 @@ class Clientes extends Model
         'email',
         'telefono',
         'direccion',
+        'imagen',
     ];
 
     protected $casts = [

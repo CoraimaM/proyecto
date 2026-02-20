@@ -3,7 +3,11 @@
 <div class="container">
     <div class="row mb-4">
         <div class="col-md-8"><h2 class="mb-0">Empleados</h2></div>
-        <div class="col-md-4 text-md-end"><a href="{{ route('empleados.create') }}" class="btn btn-pink"><i class="fa fa-plus me-1"></i> Nuevo empleado</a></div>
+        <div class="col-md-4 text-md-end">
+            @can('crear-empleados')
+                <a href="{{ route('empleados.create') }}" class="btn btn-pink"><i class="fa fa-plus me-1"></i> Nuevo empleado</a>
+            @endcan
+        </div>
     </div>
     <div class="card mb-3">
         <div class="card-body">
@@ -35,15 +39,39 @@
                             @if($empleado->email)<div style="font-size: 0.85rem;"><i class="fa fa-envelope me-1 text-muted"></i> <a href="mailto:{{ $empleado->email }}">{{ $empleado->email }}</a></div>@endif
                             @if($empleado->telefono)<div style="margin-top: 0.3rem; font-size: 0.85rem;"><i class="fa fa-phone me-1 text-muted"></i> {{ $empleado->telefono }}</div>@endif
                         </td>
-                        <td class="text-end" style="display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;">
-                            <a href="{{ route('empleados.show', $empleado->id) }}" class="btn btn-sm" style="font-size: 0.8rem; white-space: nowrap; background-color: #fff; border: 1.5px solid var(--pink-dark); color: var(--pink-dark); font-weight: 500;"><i class="fa fa-eye me-1"></i>Ver</a>
-                            <a href="{{ route('empleados.edit', $empleado->id) }}" class="btn btn-sm" style="font-size: 0.8rem; white-space: nowrap; background-color: #ffb3d9; border: 1.5px solid #ffb3d9; color: #fff; font-weight: 500;"><i class="fa fa-pen me-1"></i>Editar</a>
-                            @if(request()->get('show') === 'trashed' || (isset($show) && $show === 'trashed'))
-                                <form action="{{ route('empleados.restore', $empleado->id) }}" method="POST" class="d-inline">@csrf<button class="btn btn-sm btn-pink-dark" style="font-size: 0.8rem; white-space: nowrap; border: none;"><i class="fa fa-rotate-left me-1"></i>Restaurar</button></form>
-                                <form action="{{ route('empleados.forceDelete', $empleado->id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar permanentemente?');"><@csrf @method('DELETE')<button class="btn btn-sm btn-pink-dark" style="font-size: 0.8rem; white-space: nowrap; border: none; background-color: #c23c5f;"><i class="fa fa-trash me-1"></i>Eliminar</button></form>
-                            @else
-                                <form action="{{ route('empleados.destroy', $empleado->id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar?');"><@csrf @method('DELETE')<button class="btn btn-sm btn-pink-dark" style="font-size: 0.8rem; white-space: nowrap; border: none; background-color: #c23c5f;"><i class="fa fa-trash-alt me-1"></i>Eliminar</button></form>
-                            @endif
+                        <td class="text-end" style="white-space: nowrap;">
+                            @can('ver-empleados')
+                                <a href="{{ route('empleados.show', $empleado->id) }}" class="btn btn-sm" style="font-size: 0.8rem; background-color: #fff; border: 1.5px solid var(--pink-dark); color: var(--pink-dark); font-weight: 500;" title="Ver detalles">
+                                    <i class="fa fa-eye me-1"></i>Ver
+                                </a>
+                            @endcan
+                            
+                            @can('editar-empleados')
+                                <a href="{{ route('empleados.edit', $empleado->id) }}" class="btn btn-sm" style="font-size: 0.8rem; background-color: #ffb3d9; border: 1.5px solid #ffb3d9; color: #fff; font-weight: 500;" title="Editar empleado">
+                                    <i class="fa fa-pen me-1"></i>Editar
+                                </a>
+                            @endcan
+
+                            @can('eliminar-empleados')
+                                @if($empleado->deleted_at)
+                                    {{-- Si está eliminado, mostrar botón de restaurar --}}
+                                    <form action="{{ route('empleados.restore', $empleado->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <button class="btn btn-sm btn-success" style="font-size: 0.8rem;" title="Restaurar empleado">
+                                            <i class="fa fa-rotate-left me-1"></i>Restaurar
+                                        </button>
+                                    </form>
+                                @else
+                                    {{-- Si está activo, mostrar botón de eliminar (soft delete) --}}
+                                    <form action="{{ route('empleados.destroy', $empleado->id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este empleado? (Se puede restaurar después)');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-sm btn-pink-dark" style="font-size: 0.8rem; border: none; background-color: #c23c5f;" title="Eliminar empleado">
+                                            <i class="fa fa-trash-alt me-1"></i>Eliminar
+                                        </button>
+                                    </form>
+                                @endif
+                            @endcan
                         </td>
                     </tr>
                     @endforeach

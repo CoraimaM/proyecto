@@ -18,6 +18,8 @@ class Producto extends Model
         'precio',
         'stock',
         'sku',
+        'imagen',
+        'archivo_pdf',
     ];
 
     protected $casts = [
