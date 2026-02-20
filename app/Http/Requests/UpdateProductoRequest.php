@@ -21,6 +21,8 @@ class UpdateProductoRequest extends FormRequest
             'precio' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'sku' => "nullable|string|max:100|unique:productos,sku,{$id}",
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'archivo_pdf' => 'nullable|mimes:pdf|max:5120',
         ];
     }
 }

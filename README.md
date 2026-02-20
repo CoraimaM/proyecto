@@ -27,6 +27,12 @@ Este proyecto es una aplicación web moderna diseñada para empresas que necesit
 ✨ Interfaz intuitiva con **AdminLTE**  
 📊 Gestión completa de datos empresariales  
 🔐 Sistema de autenticación seguro  
+🛡️ **Sistema de Roles y Permisos Avanzado** (Admin / Usuario + roles personalizados)  
+👥 **Panel de Administración** para gestionar usuarios y roles  
+🔑 **Crear múltiples administradores** desde la interfaz  
+📸 **Subida de imágenes** para clientes y productos  
+📄 **Gestión de archivos PDF** para productos  
+📋 **DataTables** con búsqueda, ordenamiento y paginación avanzada  
 🗄️ Base de datos relacional optimizada  
 📱 Diseño responsive  
 ⚙️ Seeders y factories para datos de prueba  
@@ -86,6 +92,10 @@ php artisan migrate
 ```bash
 php artisan db:seed
 ```
+
+**IMPORTANTE**: Esto creará usuarios de prueba con roles:
+- **Admin**: admin@sistema.com / admin123 (Acceso completo)
+- **Usuario**: usuario@sistema.com / usuario123 (Solo ver, crear y editar)
 
 ### 8. Construir assets (CSS/JS)
 
@@ -210,7 +220,412 @@ php artisan test --coverage
 
 Una vez instalada y ejecutada, accede a:
 
+### Credenciales de Acceso
+
+**Usuario Administrador** (acceso total + panel de administración):
+- Email: `admin@sistema.com`
+- Contraseña: `admin123`
+
+**Usuario Normal** (solo puede ver, crear y editar):
+- Email: `usuario@sistema.com`
+- Contraseña: `usuario123`
+
+## Sistema de Roles y Permisos
+
+El sistema implementa un **sistema de roles y permisos avanzado** con interfaz de administración:
+
+### 👑 Admin
+- Puede **ver, crear, editar y ELIMINAR** todos los registros
+- Acceso completo al sistema
+- Puede restaurar y eliminar permanentemente
+- **Acceso al Panel de Administración** (`/admin/roles`)
+- **Puede crear nuevos usuarios** con cualquier rol
+- **Puede convertir otros usuarios en administradores**
+- **Puede crear roles personalizados** con permisos específicos
+
+### 👤 Usuario
+- Puede **ver, crear y editar** registros
+- **NO puede eliminar** nada
+- **NO tiene acceso** al panel de administración
+
+### 🛡️ Panel de Administración (Solo Admin)
+
+Los administradores tienen acceso a un panel especial en `/admin/roles` con:
+
+#### Gestión de Usuarios
+- Ver lista completa de usuarios del sistema
+- Crear nuevos usuarios con contraseña
+- **Asignar cualquier rol a cualquier usuario** (incluido Admin)
+- Cambiar roles de usuarios existentes
+- Eliminar usuarios (excepto admin principal protegido)
+
+#### Gestión de Roles
+- Ver todos los roles y sus permisos
+- Crear nuevos roles personalizados (ej: Supervisor, Gerente, Auditor)
+- Asignar/quitar permisos específicos a cada rol
+- Eliminar roles personalizados (Admin y Usuario están protegidos)
+
+#### Permisos Granulares
+Cada módulo tiene 4 permisos:
+- `ver-[modulo]` - Ver listado y detalles
+- `crear-[modulo]` - Crear nuevos registros
+- `editar-[modulo]` - Modificar registros existentes
+- `eliminar-[modulo]` - Eliminar/restaurar registros
+
+**Módulos disponibles**: clientes, productos, empleados, facturas, proveedores, incidencias
+
+📖 **Guía completa**: Ver [COMO_HACER_ADMIN.md](COMO_HACER_ADMIN.md) para instrucciones paso a paso
+
+---
+
+## 📚 Guía Práctica para Estudiantes: ¿Cómo funciona todo esto?
+
+> *Explicación paso a paso de lo que hemos construido, con un lenguaje sencillo y ejemplos prácticos*
+
+### ¿Qué problema resolvemos?
+
+Imagina que tienes una aplicación donde varios usuarios pueden entrar, pero no quieres que todos puedan hacer lo mismo. Por ejemplo:
+- El **jefe** puede crear, editar y **eliminar** clientes
+- Un **empleado** puede ver y editar clientes, pero **NO eliminarlos** (para evitar borrados accidentales)
+- Un **becario** solo puede **ver** información, sin poder cambiar nada
+
+Para esto necesitamos un **sistema de roles y permisos**. Es como tener diferentes "niveles de acceso" en un videojuego.
+
+### Los 3 conceptos clave
+
+#### 1. **Usuario** 👤
+Es una persona que puede entrar a la aplicación (con email y contraseña).
+```php
+Ejemplo: juan@empresa.com con contraseña "12345678"
 ```
+
+#### 2. **Rol** 🎭
+Es un "puesto" o "nivel" que le asignas a un usuario. 
+```
+Rol = "Admin"          (El jefe)
+Rol = "Usuario"        (Empleado normal)
+Rol = "Supervisor"     (Mando intermedio)
+```
+
+#### 3. **Permiso** 🔑
+Es una acción específica que alguien puede hacer.
+```
+Permiso = "ver-clientes"       → Puede ver la lista
+Permiso = "crear-clientes"     → Puede añadir nuevos
+Permiso = "eliminar-clientes"  → Puede borrar
+```
+
+### ¿Cómo lo conectamos todo?
+
+```
+Usuario "Juan" → tiene el → Rol "Admin" → que tiene los → Permisos para TODO
+Usuario "Ana"  → tiene el → Rol "Usuario" → que tiene → Permisos solo para ver/crear/editar
+```
+
+### Paso a paso: ¿Cómo lo hemos construido?
+
+#### PASO 1: Instalamos el paquete Spatie
+```bash
+composer require spatie/laravel-permission
+```
+Este paquete nos da todo lo necesario para manejar roles y permisos. Es como instalar un "mod" que añade esta funcionalidad.
+
+#### PASO 2: Creamos las tablas en la base de datos
+```bash
+php artisan migrate
+```
+Esto crea varias tablas:
+- `users` → Nuestros usuarios (Juan, Ana, Pedro...)
+- `roles` → Los roles disponibles (Admin, Usuario, Supervisor...)
+- `permissions` → Los permisos disponibles (ver-clientes, crear-productos...)
+- `model_has_roles` → Conecta usuarios con sus roles
+- `role_has_permissions` → Conecta roles con sus permisos
+
+**Piénsalo como Excel**: Cada tabla es una hoja con sus columnas y filas.
+
+#### PASO 3: Creamos roles y permisos iniciales
+```bash
+php artisan db:seed --class=RolesAndPermissionsSeeder
+```
+
+Este comando ejecuta un "seeder" que:
+
+**A) Crea los permisos** (24 en total: 4 por cada módulo)
+```php
+'ver-clientes', 'crear-clientes', 'editar-clientes', 'eliminar-clientes'
+'ver-productos', 'crear-productos', 'editar-productos', 'eliminar-productos'
+// ... y así para empleados, facturas, proveedores, incidencias
+```
+
+**B) Crea 2 roles**
+- **Admin**: Con TODOS los permisos (24/24)
+- **Usuario**: Con permisos limitados (18/24 - NO puede eliminar nada)
+
+**C) Crea 2 usuarios de prueba**
+- `admin@sistema.com` → Rol: Admin
+- `usuario@sistema.com` → Rol: Usuario
+
+#### PASO 4: Protegemos las vistas con permisos
+
+En las vistas Blade, usamos directivas para mostrar/ocultar botones:
+
+**Antes** (sin permisos):
+```blade
+<!-- El botón eliminar aparecía para TODOS -->
+<button>Eliminar</button>
+```
+
+**Después** (con permisos):
+```blade
+@can('eliminar-clientes')
+    <!-- Este botón SOLO aparece si el usuario tiene el permiso -->
+    <button>Eliminar</button>
+@endcan
+```
+
+**¿Qué pasa en cada caso?**
+
+Si entras como **Admin** (tiene permiso "eliminar-clientes"):
+- ✅ Ve el botón "Eliminar"
+
+Si entras como **Usuario** (NO tiene ese permiso):
+- ❌ NO ve el botón "Eliminar"
+
+Es como si el botón fuera invisible para él.
+
+#### PASO 5: Creamos el Panel de Administración
+
+Hemos construido una interfaz visual en `/admin/roles` donde el Admin puede:
+
+**A) Gestionar Usuarios** (`/admin/roles/users`)
+```
+┌─────────────────────────────────────────────┐
+│ Usuarios                                     │
+├─────────────────────────────────────────────┤
+│ Juan Pérez    juan@empresa.com    [Admin ▼] │  ← Desplegable para cambiar rol
+│ Ana López     ana@empresa.com     [Usuario ▼]│
+│ [+ Nuevo Usuario]                            │
+└─────────────────────────────────────────────┘
+```
+
+**B) Gestionar Roles** (`/admin/roles/roles`)
+```
+┌─────────────────────────────────────────────┐
+│ Rol: Admin                                   │
+├─────────────────────────────────────────────┤
+│ Permisos:                                    │
+│ [✓] ver-clientes      [✓] crear-clientes    │
+│ [✓] editar-clientes   [✓] eliminar-clientes │
+│ [✓] ver-productos     [✓] crear-productos   │
+│ ... (marcar/desmarcar permisos)              │
+│ [Guardar Permisos]                           │
+└─────────────────────────────────────────────┘
+```
+
+### Ejemplos prácticos de uso
+
+#### Ejemplo 1: Crear un usuario normal
+1. Login como `admin@sistema.com`
+2. Ir a **Administración → Gestionar Usuarios**
+3. Clic en **"Nuevo Usuario"**
+4. Rellenar:
+   - Nombre: `María García`
+   - Email: `maria@empresa.com`
+   - Contraseña: `12345678`
+   - Rol: `Usuario`
+5. Guardar
+6. María ya puede entrar, pero NO verá botones de eliminar
+
+#### Ejemplo 2: Convertir a María en Admin
+1. En la lista de usuarios, buscar a María
+2. En su fila, abrir el desplegable de "Cambiar Rol"
+3. Seleccionar `Admin`
+4. Clic en guardar 💾
+5. ¡Listo! María ahora tiene acceso total
+
+#### Ejemplo 3: Crear un rol personalizado "Supervisor"
+1. Ir a **Administración → Gestionar Roles**
+2. Clic en **"Nuevo Rol"**
+3. Nombre: `Supervisor`
+4. Seleccionar permisos:
+   - ✅ Todos los de "ver" (ver-clientes, ver-productos...)
+   - ✅ Todos los de "crear" 
+   - ✅ Todos los de "editar"
+   - ✅ Algunos de "eliminar" (solo productos e incidencias)
+   - ❌ NO puede eliminar clientes, empleados ni facturas
+5. Guardar
+6. Ahora puedes asignar el rol "Supervisor" a cualquier usuario
+
+### ¿Cómo funciona por debajo? (Para los curiosos)
+
+#### En el código PHP del controlador:
+```php
+// Verificar si el usuario actual tiene un permiso
+if (auth()->user()->can('eliminar-clientes')) {
+    // Código para eliminar...
+}
+```
+
+#### En las vistas Blade:
+```blade
+@can('crear-productos')
+    <a href="/productos/create">Nuevo Producto</a>
+@endcan
+
+@role('Admin')
+    <a href="/admin">Panel de Administración</a>
+@endrole
+```
+
+#### En las rutas (middleware):
+```php
+// Solo usuarios con rol Admin pueden acceder
+Route::middleware(['role:Admin'])->group(function () {
+    Route::get('/admin/roles', [RoleController::class, 'index']);
+});
+```
+
+### Ventajas de este sistema
+
+✅ **Seguridad**: Los usuarios solo ven lo que pueden hacer
+✅ **Flexibilidad**: Puedes crear roles personalizados (Supervisor, Gerente, Auditor...)
+✅ **Escalabilidad**: Fácil añadir nuevos permisos
+✅ **Mantenible**: Todo centralizado en el panel de administración
+✅ **Sin código duro**: No hace falta programar para cambiar permisos
+
+### Archivos importantes que hemos creado/modificado
+
+```
+📁 proyecto/
+├── 📄 app/Http/Controllers/RoleController.php    ← Controlador del panel admin
+├── 📄 app/Models/User.php                         ← Añadimos HasRoles trait
+├── 📁 resources/views/admin/roles/
+│   ├── 📄 index.blade.php                         ← Panel principal
+│   ├── 📄 users.blade.php                         ← Gestión de usuarios
+│   └── 📄 roles.blade.php                         ← Gestión de roles
+├── 📁 database/seeders/
+│   └── 📄 RolesAndPermissionsSeeder.php          ← Crea roles y permisos
+├── 📄 routes/web.php                              ← Rutas del panel (protegidas)
+├── 📄 COMO_HACER_ADMIN.md                         ← Guía para crear admins
+└── 📄 SISTEMA_ROLES_PERMISOS.md                   ← Documentación técnica
+```
+
+### Comandos útiles para probar
+
+```bash
+# Ver permisos de un usuario
+php artisan tinker
+>>> User::find(1)->getAllPermissions()->pluck('name')
+
+# Ver roles de un usuario
+>>> User::find(1)->roles
+
+# Asignar rol manualmente
+>>> User::find(2)->assignRole('Admin')
+
+# Ver usuarios con rol Admin
+>>> User::role('Admin')->get()
+
+# Limpiar caché de permisos (si haces cambios manuales)
+>>> php artisan permission:cache-reset
+```
+
+### Tareas típicas que puedes hacer ahora
+
+1. **Crear un nuevo rol "Contable"** que solo pueda gestionar facturas
+2. **Crear usuarios temporales** con rol "Usuario" para pruebas
+3. **Promover usuarios a Admin** cuando sea necesario
+4. **Quitar permisos de eliminación** a roles específicos
+5. **Crear roles por departamento** (Ventas, Almacén, RRHH...)
+
+### ¿Y si algo no funciona?
+
+**Problema**: El botón no aparece/desaparece
+```bash
+# Solución 1: Limpiar caché
+php artisan cache:clear
+php artisan view:clear
+
+# Solución 2: Verificar permisos en BD
+php artisan tinker
+>>> User::find(1)->can('nombre-permiso')  // debe devolver true o false
+```
+
+**Problema**: Error "Permission does not exist"
+```bash
+# Ejecutar el seeder de nuevo
+php artisan db:seed --class=RolesAndPermissionsSeeder
+```
+
+**Problema**: No puedo acceder al panel de admin
+```bash
+# Verificar que tu usuario tiene rol Admin
+php artisan tinker
+>>> User::where('email', 'tu@email.com')->first()->assignRole('Admin')
+```
+
+### Para seguir aprendiendo
+
+📖 Documentación completa de Spatie: https://spatie.be/docs/laravel-permission
+📖 Guías específicas:
+- [COMO_HACER_ADMIN.md](COMO_HACER_ADMIN.md) - Tutorial paso a paso
+- [SISTEMA_ROLES_PERMISOS.md](SISTEMA_ROLES_PERMISOS.md) - Referencia técnica
+
+---
+
+## DataTables
+
+Las vistas de **Clientes** y **Productos** incluyen **DataTables** para una mejor experiencia de usuario:
+
+- 🔍 **Búsqueda en tiempo real**: Filtra resultados instantáneamente
+- 📊 **Ordenamiento por columnas**: Click en cualquier columna para ordenar
+- 📄 **Paginación avanzada**: Navegación mejorada entre páginas
+- 📱 **Diseño responsive**: Se adapta a cualquier tamaño de pantalla
+- 🌐 **Idioma español**: Interfaz completamente traducida
+
+Las tablas se inicializan automáticamente con configuración optimizada.
+
+## Gestión de Archivos
+
+### Subida de Imágenes
+
+**Clientes y Productos** pueden tener imágenes asociadas:
+- Formatos permitidos: JPG, PNG, GIF
+- Tamaño máximo: 2MB
+- Las imágenes se muestran en listados y vistas de detalle
+- Al actualizar, la imagen anterior se reemplaza automáticamente
+
+**Ubicación de almacenamiento**:
+- Clientes: `public/uploads/clientes/`
+- Productos: `public/uploads/productos/`
+
+### Subida de Archivos PDF
+
+**Productos** pueden tener archivos PDF adjuntos (fichas técnicas, manuales):
+- Formato permitido: PDF
+- Tamaño máximo: 5MB
+- Los PDFs se pueden descargar/visualizar desde la lista de productos
+- Al actualizar, el PDF anterior se reemplaza automáticamente
+
+**Ubicación de almacenamiento**:
+- PDFs de productos: `public/uploads/productos/pdfs/`
+
+### Ejemplo de Uso en Formularios
+
+Los formularios de creación/edición incluyen campos para subir archivos:
+
+```html
+<input type="file" name="imagen" accept="image/*">
+<input type="file" name="archivo_pdf" accept=".pdf">
+```
+
+Las validaciones están configuradas en los Form Requests.itar** registros
+- **NO puede eliminar** registros
+- Acceso limitado al sistema
+
+Los permisos se controlan automáticamente en las vistas. Los botones de eliminación solo aparecen para usuarios con rol Admin.
+
+Para más información sobre roles y permisos, consulta: **[GUIA_ROLES_Y_PERMISOS.md](GUIA_ROLES_Y_PERMISOS.md)**
 http://localhost:8000
 ```
 
@@ -624,6 +1039,162 @@ Esto crea el modelo y la migración.
 - Usa nombres descriptivos para variables y funciones
 - Comenta código complejo
 - Escribe tests para nuevas funcionalidades
+
+## 🎓 Conceptos que aprendiste construyendo este proyecto
+
+Si eres estudiante de DAM (o cualquier estudiante de desarrollo), trabajar con este proyecto te ha enseñado:
+
+### Backend (Laravel/PHP)
+- ✅ **MVC (Modelo-Vista-Controlador)**: Separación de lógica, presentación y datos
+- ✅ **ORM Eloquent**: Trabajar con bases de datos sin escribir SQL
+- ✅ **Migraciones**: Control de versiones para tu base de datos
+- ✅ **Seeders y Factories**: Generación automática de datos de prueba
+- ✅ **Middleware**: Interceptar peticiones para autenticación y autorización
+- ✅ **Form Requests**: Validación centralizada y reutilizable
+- ✅ **Relaciones entre modelos**: hasMany, belongsTo, etc.
+- ✅ **Soft Deletes**: Eliminación lógica vs física
+- ✅ **Sistema de autenticación**: Login, registro, sesiones
+
+### Sistema de Permisos (Avanzado)
+- ✅ **RBAC (Role-Based Access Control)**: Control de acceso basado en roles
+- ✅ **Autorización**: @can, @role, middleware('role:Admin')
+- ✅ **Permisos granulares**: Control fino de lo que cada usuario puede hacer
+- ✅ **Traits en PHP**: Reutilización de código (HasRoles, SoftDeletes)
+- ✅ **Paquetes de terceros**: Integrar Spatie Permission
+
+### Frontend
+- ✅ **Blade Templates**: Sistema de plantillas de Laravel
+- ✅ **Bootstrap 5**: Framework CSS responsive
+- ✅ **AdminLTE**: Plantilla de administración profesional
+- ✅ **DataTables**: Tablas interactivas con búsqueda y paginación
+- ✅ **JavaScript/jQuery**: Interactividad en el cliente
+- ✅ **Directivas Blade**: @if, @foreach, @can, @auth
+- ✅ **Componentes reutilizables**: Layouts, includes, components
+
+### Gestión de Archivos
+- ✅ **Upload de imágenes**: Validación, almacenamiento, visualización
+- ✅ **Upload de PDFs**: Gestión de documentos
+- ✅ **Storage de Laravel**: Sistema de archivos unificado
+- ✅ **Validación de archivos**: Tipos, tamaños, seguridad
+
+### Base de Datos
+- ✅ **Diseño de base de datos relacional**: Tablas, relaciones, claves foráneas
+- ✅ **Normalización**: Estructura eficiente de datos
+- ✅ **Índices y optimización**: Rendimiento en consultas
+- ✅ **Timestamps automáticos**: created_at, updated_at, deleted_at
+- ✅ **Queries complejas**: Where, joins, with (eager loading)
+
+### Arquitectura y Patrones
+- ✅ **Separación de responsabilidades**: Cada clase tiene un propósito
+- ✅ **DRY (Don't Repeat Yourself)**: Código reutilizable
+- ✅ **SOLID principles**: Especialmente Single Responsibility
+- ✅ **Repository pattern** (implícito en Eloquent)
+- ✅ **Dependency Injection**: Laravel lo hace automáticamente
+
+### DevOps y Herramientas
+- ✅ **Composer**: Gestor de dependencias PHP
+- ✅ **NPM**: Gestor de paquetes JavaScript
+- ✅ **Artisan CLI**: Comandos de consola personalizados
+- ✅ **Git/Control de versiones**: (si usas Git)
+- ✅ **Variables de entorno**: Configuración con .env
+- ✅ **Debugging**: dd(), logs, Laravel Debugbar
+
+### Seguridad
+- ✅ **CSRF Protection**: Tokens en formularios
+- ✅ **SQL Injection Prevention**: Eloquent usa prepared statements
+- ✅ **XSS Prevention**: Blade escapa HTML automáticamente
+- ✅ **Hash de contraseñas**: bcrypt/argon2
+- ✅ **Validación de entrada**: Nunca confiar en datos del usuario
+- ✅ **Autorización**: Verificar permisos antes de acciones sensibles
+
+### Buenas Prácticas Aprendidas
+- ✅ **Nombres descriptivos**: Variables y funciones claros
+- ✅ **Comentarios útiles**: Documentar decisiones complejas
+- ✅ **Convenciones de nombrado**: PSR-12, camelCase, snake_case
+- ✅ **Estructura organizada**: Archivos en lugares lógicos
+- ✅ **Testing mindset**: Pensar en cómo probar el código
+- ✅ **README completo**: Documentación para otros desarrolladores
+
+### Habilidades Profesionales
+- ✅ **Leer documentación oficial**: Laravel, Spatie, Bootstrap
+- ✅ **Integrar paquetes externos**: Composer packages
+- ✅ **Debugging**: Encontrar y resolver errores
+- ✅ **Trabajo incremental**: Construir feature por feature
+- ✅ **Pensar en el usuario final**: UX/UI consideraciones
+- ✅ **Gestión de proyecto**: Priorizar funcionalidades
+
+### Tecnologías Específicas Usadas
+```
+PHP 8.1+              └─ Lenguaje backend
+Laravel 11            └─ Framework web
+MySQL/MariaDB         └─ Base de datos
+Composer              └─ Gestor dependencias PHP
+NPM                   └─ Gestor dependencias JS
+Blade                 └─ Motor de plantillas
+Bootstrap 5           └─ Framework CSS
+jQuery                └─ Biblioteca JavaScript
+DataTables            └─ Plugin tablas interactivas
+AdminLTE              └─ Plantilla admin
+Font Awesome          └─ Iconos
+Spatie Permission     └─ Sistema de permisos
+Vite                  └─ Build tool assets
+```
+
+### ¿Qué puedes añadir tu CV ahora?
+
+Después de trabajar con este proyecto, puedes mencionar:
+
+**Competencias técnicas:**
+- Desarrollo con Laravel (Framework PHP)
+- Sistema MVC y arquitectura de aplicaciones web
+- Gestión de bases de datos relacionales (MySQL)
+- Frontend responsive con Bootstrap
+- Sistema de autenticación y autorización (RBAC)
+- Integración de librerías externas (Composer)
+- Control de versiones de BBDD (migraciones)
+
+**Proyectos realizados:**
+- Sistema de gestión empresarial con panel de administración
+- Implementación de sistema de roles y permisos multinivel
+- CRUD completo con validaciones y relaciones
+- Gestión de archivos (imágenes y PDFs)
+- Interfaz administrativa con DataTables interactivos
+
+### Siguientes pasos sugeridos para mejorar
+
+1. **Testing**: Añadir tests unitarios y de integración
+2. **API REST**: Crear endpoints para consumir desde móvil
+3. **Notificaciones**: Sistema de emails y alertas
+4. **Exportación**: Generar Excel/PDF de reportes
+5. **Dashboard**: Gráficas y estadísticas con Chart.js
+6. **Auditoría**: Log de todas las acciones de usuarios
+7. **Multi-idioma**: Internacionalización (i18n)
+8. **Cache**: Redis para mejorar rendimiento
+9. **Queue**: Procesos en segundo plano (emails, exports)
+10. **Docker**: Containerización para deployment
+
+### Recursos para seguir aprendiendo
+
+📚 **Documentación oficial:**
+- Laravel: https://laravel.com/docs
+- Spatie Permission: https://spatie.be/docs/laravel-permission
+- Bootstrap: https://getbootstrap.com
+
+🎥 **Video tutoriales recomendados:**
+- Laracasts.com (cursos de Laravel)
+- Canal de YouTube: "Coders Tape"
+- Canal de YouTube: "Traversy Media"
+
+📖 **Libros recomendados:**
+- "Laravel: Up & Running" - Matt Stauffer
+- "PHP Objects, Patterns, and Practice" - Matt Zandstra
+
+💻 **Repositorios para inspirarte:**
+- https://github.com/laravel/laravel (Laravel oficial)
+- https://github.com/spatie/laravel-permission (Permisos)
+- https://github.com/topics/laravel-admin (Otros paneles admin)
+
+---
 
 ## Licencia
 

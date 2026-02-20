@@ -18,7 +18,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('clientes.update', $cliente->id) }}" method="POST">
+                    <form action="{{ route('clientes.update', $cliente->id) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
@@ -41,6 +41,18 @@
                         <div class="mb-3">
                             <label class="form-label">Dirección</label>
                             <textarea name="direccion" class="form-control" rows="3" placeholder="Dirección completa">{{ old('direccion', $cliente->direccion) }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Foto del Cliente</label>
+                            @if($cliente->imagen)
+                                <div class="mb-2">
+                                    <img src="{{ asset($cliente->imagen) }}" alt="Foto actual" style="max-width: 150px; height: auto;" class="img-thumbnail">
+                                    <p class="text-muted small">Imagen actual</p>
+                                </div>
+                            @endif
+                            <input type="file" name="imagen" class="form-control" accept="image/*">
+                            <small class="form-text text-muted">Seleccionar nueva imagen para reemplazar (JPG, PNG, GIF - Máx. 2MB)</small>
                         </div>
 
                         <div class="d-flex justify-content-between">

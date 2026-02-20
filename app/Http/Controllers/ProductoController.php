@@ -39,6 +39,31 @@ class ProductoController extends Controller
     public function store(StoreProductoRequest $request)
     {
         $data = $request->validated();
+        
+        // Debug: Log para ver qué se está recibiendo
+        \Log::info('Datos recibidos en productos store:', [
+            'has_image' => $request->hasFile('imagen'),
+            'has_pdf' => $request->hasFile('archivo_pdf'),
+            'all_files' => $request->allFiles(),
+            'validated_data' => $data
+        ]);
+        
+        // Manejar subida de imagen
+        if ($request->hasFile('imagen')) {
+            $imagen = $request->file('imagen');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $imagen->move(public_path('uploads/productos'), $nombreImagen);
+            $data['imagen'] = 'uploads/productos/' . $nombreImagen;
+        }
+        
+        // Manejar subida de PDF
+        if ($request->hasFile('archivo_pdf')) {
+            $pdf = $request->file('archivo_pdf');
+            $nombrePdf = time() . '_' . $pdf->getClientOriginalName();
+            $pdf->move(public_path('uploads/productos/pdfs'), $nombrePdf);
+            $data['archivo_pdf'] = 'uploads/productos/pdfs/' . $nombrePdf;
+        }
+        
         Producto::create($data);
         return redirect()->route('productos.index')->with('success', 'Producto creado correctamente.');
     }
@@ -59,6 +84,33 @@ class ProductoController extends Controller
     {
         $producto = Producto::withTrashed()->findOrFail($id);
         $data = $request->validated();
+        
+        // Manejar subida de nueva imagen
+        if ($request->hasFile('imagen')) {
+            // Eliminar imagen anterior si existe
+            if ($producto->imagen && file_exists(public_path($producto->imagen))) {
+                unlink(public_path($producto->imagen));
+            }
+            
+            $imagen = $request->file('imagen');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $imagen->move(public_path('uploads/productos'), $nombreImagen);
+            $data['imagen'] = 'uploads/productos/' . $nombreImagen;
+        }
+        
+        // Manejar subida de nuevo PDF
+        if ($request->hasFile('archivo_pdf')) {
+            // Eliminar PDF anterior si existe
+            if ($producto->archivo_pdf && file_exists(public_path($producto->archivo_pdf))) {
+                unlink(public_path($producto->archivo_pdf));
+            }
+            
+            $pdf = $request->file('archivo_pdf');
+            $nombrePdf = time() . '_' . $pdf->getClientOriginalName();
+            $pdf->move(public_path('uploads/productos/pdfs'), $nombrePdf);
+            $data['archivo_pdf'] = 'uploads/productos/pdfs/' . $nombrePdf;
+        }
+        
         $producto->update($data);
         return redirect()->route('productos.index')->with('success', 'Producto actualizado.');
     }

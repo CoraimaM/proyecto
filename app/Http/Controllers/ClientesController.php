@@ -39,6 +39,22 @@ class ClientesController extends Controller
     public function store(StoreClienteRequest $request)
     {
         $data = $request->validated();
+        
+        // Debug: Log para ver qué se está recibiendo
+        \Log::info('Datos recibidos en store:', [
+            'has_image' => $request->hasFile('imagen'),
+            'all_files' => $request->allFiles(),
+            'validated_data' => $data
+        ]);
+        
+        // Manejar subida de imagen
+        if ($request->hasFile('imagen')) {
+            $imagen = $request->file('imagen');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $imagen->move(public_path('uploads/clientes'), $nombreImagen);
+            $data['imagen'] = 'uploads/clientes/' . $nombreImagen;
+        }
+        
         Clientes::create($data);
         return redirect()->route('clientes.index')->with('success', 'Cliente creado correctamente.');
     }
@@ -59,6 +75,20 @@ class ClientesController extends Controller
     {
         $cliente = Clientes::withTrashed()->findOrFail($id);
         $data = $request->validated();
+        
+        // Manejar subida de nueva imagen
+        if ($request->hasFile('imagen')) {
+            // Eliminar imagen anterior si existe
+            if ($cliente->imagen && file_exists(public_path($cliente->imagen))) {
+                unlink(public_path($cliente->imagen));
+            }
+            
+            $imagen = $request->file('imagen');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $imagen->move(public_path('uploads/clientes'), $nombreImagen);
+            $data['imagen'] = 'uploads/clientes/' . $nombreImagen;
+        }
+        
         $cliente->update($data);
         return redirect()->route('clientes.index')->with('success', 'Cliente actualizado.');
     }
